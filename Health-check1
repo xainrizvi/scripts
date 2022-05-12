@@ -1,0 +1,128 @@
+
+function sysstat {
+echo "#######################################################################"
+echo "                  Basic Health Check Report"
+echo "#######################################################################"
+
+echo -e "
+Hostname         : `hostname`
+Kernel Version   : `uname -r`
+Uptime           : `uptime | sed 's/.*up \([^,]*\), .*/\1/'`
+Last Reboot Time : `who -b | awk '{print $3,$4}'`
+
+#######################################################################
+                          OS-Details
+#######################################################################
+
+`egrep '^(VERSION|NAME)=' /etc/os-release `
+"
+
+echo -e "
+*********************************************************************
+			     Disk Information 
+*********************************************************************
+-> List number of disk
+`lsscsi`
+
+-> Block Devices 
+`lsblk`
+
+-> Partition Detail
+`df -hT`
+
+"
+
+
+TOTALMEM=`free -m | head -2 | tail -1| awk '{print $2}'`
+TOTALBC=`echo "scale=2;if($TOTALMEM<1024 && $TOTALMEM > 0) print 0;$TOTALMEM/1024"| bc -l`
+USEDMEM=`free -m | head -2 | tail -1| awk '{print $3}'`
+USEDBC=`echo "scale=2;if($USEDMEM<1024 && $USEDMEM > 0) print 0;$USEDMEM/1024"|bc -l`
+FREEMEM=`free -m | head -2 | tail -1| awk '{print $4}'`
+FREEBC=`echo "scale=2;if($FREEMEM<1024 && $FREEMEM > 0) print 0;$FREEMEM/1024"|bc -l`
+TOTALSWAP=`free -m | tail -1| awk '{print $2}'`
+TOTALSBC=`echo "scale=2;if($TOTALSWAP<1024 && $TOTALSWAP > 0) print 0;$TOTALSWAP/1024"| bc -l`
+USEDSWAP=`free -m | tail -1| awk '{print $3}'`
+USEDSBC=`echo "scale=2;if($USEDSWAP<1024 && $USEDSWAP > 0) print 0;$USEDSWAP/1024"|bc -l`
+FREESWAP=`free -m |  tail -1| awk '{print $4}'`
+FREESBC=`echo "scale=2;if($FREESWAP<1024 && $FREESWAP > 0) print 0;$FREESWAP/1024"|bc -l`
+
+echo -e "
+*********************************************************************
+		     Memory 
+*********************************************************************
+
+=> Physical Memory
+Total\tUsed\tFree\t%Free
+${TOTALBC}GB\t${USEDBC}GB \t${FREEBC}GB\t$(($FREEMEM * 100 / $TOTALMEM  ))%
+
+=> Swap Memory
+Total\tUsed\tFree\t%Free
+${TOTALSBC}GB\t${USEDSBC}GB\t${FREESBC}GB\t$(($FREESWAP * 100 / $TOTALSWAP  ))%
+
+
+#######################################################################
+				Dmesg
+#######################################################################
+->Dmesg-Error
+`dmesg |grep -i error`
+->Dmesg-Warn
+`dmesg |grep -i warn`
+
+
+
+
+########################################################################
+		IP	Address		Show
+########################################################################
+`ip a s`
+
+########################################################################
+			Firewall/Getenforce
+#######################################################################
+->Firewall
+`firewall-cmd --list-all`
+->Getenforce
+`getenforce`
+
+
+########################################################################
+				Logs
+########################################################################
+->Error
+grep -i error /var/log/messages 
+->warn
+grep -i warn /var/log/messages  
+
+
+########################################################################
+				Services
+########################################################################
+systemctl -t service --failed
+`systemctl -t service --failed`
+
+
+
+
+*********************************************************************
+                             Process
+*********************************************************************
+
+=> Top memory using processs/application
+
+PID %MEM RSS COMMAND
+`ps aux | awk '{print $2, $4, $6, $11}' | sort -k3rn | head -n 10`
+
+=> Top CPU using process/application
+`top b -n1 | head -17 | tail -11`
+
+
+`ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head`
+`ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%cpu | head`
+
+"			
+}
+[[ -d `hostname` ]] || mkdir `hostname`
+FILENAME="health-`hostname`-`date +%y%m%d`-`date +%H%M`.txt"
+#sysstat > /`hostname`/$FILENAME
+sysstat > /`hostname`/report.txt
+
