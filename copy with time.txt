@@ -5,7 +5,7 @@ su saptebis
 
 
   for j in $(ls /mnt/ebis/journals |grep -i $num)
-do scp -p $j saptintp@172.25.128.111:/export/home/saptintp/interface/int
+do scp -p $j /home/zain/
 done
 
 
@@ -20,4 +20,4 @@ or
 #find /mnt/ebis/journals -name '*.csv' -mtime -1 -exec cp -rf {} /root/test \;
 
 
-find /mnt/ebis/journals -name '*.csv' -mtime -1 -exec scp -rf -p saptintp@172.25.128.111:/export/home/saptintp/interface/int \;
+find /mnt/ebis/journals -name '*.csv' -mtime -1 -exec scp -rf -p /root/test \;
