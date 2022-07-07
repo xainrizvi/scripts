@@ -1,0 +1,7 @@
+echo  "Enter Username?"
+read user
+echo "Enter Password?"
+read pass
+#echo $user
+
+echo "$pass" | passwd --stdin $user
